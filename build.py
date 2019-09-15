@@ -31,8 +31,8 @@ def write_dir_to_zip(src, zf):
         for filename in files:
             absname = os.path.abspath(os.path.join(dirname, filename))
             arcname = absname[len(abs_src) + 1:]
-            print 'zipping %s as %s' % (os.path.join(dirname, filename),
-                                        arcname)
+            print('zipping %s as %s' % (os.path.join(dirname, filename),
+                                        arcname))
             zf.write(absname, arcname)
 
 def read_json(jsonf_path):
@@ -63,7 +63,7 @@ def check_bucket_exists(s3path):
 @task()
 def clean():
     '''Clean build directory.'''
-    print 'Cleaning build directory...'
+    print('Cleaning build directory...')
     
     if os.path.exists('build'):
     	shutil.rmtree('build')
@@ -82,7 +82,7 @@ def packagelambda(* functions):
         functions = ("athenarunner", "gluerunner", "ons3objectcreated")
 
     for function in functions:
-        print 'Packaging "{}" lambda function in directory'.format(function)
+        print('Packaging "{}" lambda function in directory'.format(function))
         zipf = zipfile.ZipFile("%s.zip" % function, "w", zipfile.ZIP_DEFLATED)
         
         write_dir_to_zip("../lambda/{}/".format(function), zipf)
@@ -132,15 +132,15 @@ def deploylambda(*functions, **kwargs):
         src_s3_key = params[function]['SourceS3Key']
 
         if not src_s3_key and not src_s3_bucket_name:
-            print(
+            print((
                 "ERROR: Both Source S3 bucket name and S3 key must be specified for function '{}'. FUNCTION NOT DEPLOYED.".format(
-                    function))
+                    function)))
             continue
 
-        print("Checking if S3 Bucket '{}' exists...".format(src_s3_bucket_name))
+        print(("Checking if S3 Bucket '{}' exists...".format(src_s3_bucket_name)))
 
         if (not check_bucket_exists(src_s3_bucket_name)):
-            print("Bucket %s not found. Creating in region {}.".format(src_s3_bucket_name, region_name))
+            print(("Bucket {} not found. Creating in region {}.".format(src_s3_bucket_name, region_name)))
 
             if (region_name == "us-east-1"):
                 s3_client.create_bucket(
@@ -156,7 +156,7 @@ def deploylambda(*functions, **kwargs):
                     }
                 )
 
-        print "Uploading function '{}' to '{}'".format(function, src_s3_key)
+        print("Uploading function '{}' to '{}'".format(function, src_s3_key))
 
         with open('build/{}.zip'.format(function), 'rb') as data:
             s3_client.upload_fileobj(data, src_s3_bucket_name, src_s3_key)
@@ -183,7 +183,7 @@ def createstack(* stacks, **kwargs):
 
         cfn_client = boto3.client('cloudformation')
 
-        print("Attempting to CREATE '%s' stack using CloudFormation." % (stack_name))
+        print(("Attempting to CREATE '%s' stack using CloudFormation." % (stack_name)))
         start_t = time.time()
         response = cfn_client.create_stack(
             StackName=stack_name,
@@ -194,17 +194,17 @@ def createstack(* stacks, **kwargs):
             ],
         )
 
-        print("Waiting until '%s' stack status is CREATE_COMPLETE" % stack_name)
+        print(("Waiting until '%s' stack status is CREATE_COMPLETE" % stack_name))
 
         try:
 
             cfn_stack_delete_waiter = cfn_client.get_waiter('stack_create_complete')
             cfn_stack_delete_waiter.wait(StackName=stack_name)
-            print("Stack CREATED in approximately %d secs." % int(time.time() - start_t))
+            print(("Stack CREATED in approximately %d secs." % int(time.time() - start_t)))
 
         except Exception as e:
             print("Stack creation FAILED.")
-            print(e.message)
+            print((e))
 
 
 @task()
@@ -226,7 +226,7 @@ def updatestack(* stacks, **kwargs):
 
         cfn_client = boto3.client('cloudformation')
 
-        print("Attempting to UPDATE '%s' stack using CloudFormation." % (stack_name))
+        print(("Attempting to UPDATE '%s' stack using CloudFormation." % (stack_name)))
         try:
             start_t = time.time()
             response = cfn_client.update_stack(
@@ -238,13 +238,13 @@ def updatestack(* stacks, **kwargs):
                 ],
             )
 
-            print("Waiting until '%s' stack status is UPDATE_COMPLETE" % stack_name)
+            print(("Waiting until '%s' stack status is UPDATE_COMPLETE" % stack_name))
             cfn_stack_update_waiter = cfn_client.get_waiter('stack_update_complete')
             cfn_stack_update_waiter.wait(StackName=stack_name)
 
-            print("Stack UPDATED in approximately %d secs." % int(time.time() - start_t))
+            print(("Stack UPDATED in approximately %d secs." % int(time.time() - start_t)))
         except ClientError as e:
-            print "EXCEPTION: " + e.response["Error"]["Message"]
+            print("EXCEPTION: " + e.response["Error"]["Message"])
 
 @task()
 def stackstatus(* stacks):
@@ -264,10 +264,10 @@ def stackstatus(* stacks):
             )
 
             if(response["Stacks"][0]):
-                print("Stack '%s' has the status '%s'" % (stack_name, response["Stacks"][0]["StackStatus"]))
+                print(("Stack '%s' has the status '%s'" % (stack_name, response["Stacks"][0]["StackStatus"])))
 
         except ClientError as e:
-            print "EXCEPTION: " + e.response["Error"]["Message"]
+            print("EXCEPTION: " + e.response["Error"]["Message"])
 
 
 @task()
@@ -283,16 +283,16 @@ def deletestack(* stacks):
     
         cfn_client = boto3.client('cloudformation')
 
-        print("Attempting to DELETE '%s' stack using CloudFormation." % stack_name)
+        print(("Attempting to DELETE '%s' stack using CloudFormation." % stack_name))
         start_t = time.time()
         response = cfn_client.delete_stack(
             StackName=stack_name
         )
 
-        print("Waiting until '%s' stack status is DELETE_COMPLETE" % stack_name)
+        print(("Waiting until '%s' stack status is DELETE_COMPLETE" % stack_name))
         cfn_stack_delete_waiter = cfn_client.get_waiter('stack_delete_complete')
         cfn_stack_delete_waiter.wait(StackName=stack_name)
-        print("Stack DELETED in approximately %d secs." % int(time.time() - start_t))
+        print(("Stack DELETED in approximately %d secs." % int(time.time() - start_t)))
 
 
 @task()
@@ -326,16 +326,16 @@ def deploygluescripts(**kwargs):
     s3_bucket_name = result.group(1)
     s3_key = result.group(2)
 
-    print("Checking if S3 Bucket '{}' exists...".format(s3_bucket_name))
+    print(("Checking if S3 Bucket '{}' exists...".format(s3_bucket_name)))
 
     if (not check_bucket_exists(s3_bucket_name)):
-        print("ERROR: S3 bucket for path '{}' not found.".format(s3_etl_script_path))
+        print(("ERROR: S3 bucket for path '{}' not found.".format(s3_etl_script_path)))
         return
 
     for dirname, subdirs, files in os.walk(glue_scripts_path):
         for filename in files:
             absname = os.path.abspath(os.path.join(dirname, filename))
-            print "Uploading AWS Glue script '{}' to '{}/{}'".format(absname, s3_bucket_name, s3_key)
+            print("Uploading AWS Glue script '{}' to '{}/{}'".format(absname, s3_bucket_name, s3_key))
             with open(absname, 'rb') as data:
                 s3_client.upload_fileobj(data, s3_bucket_name, '{}/{}'.format(s3_key, filename))
 
@@ -346,7 +346,7 @@ def deploygluescripts(**kwargs):
 def deletes3bucket(name):
     '''DELETE ALL objects in an Amazon S3 bucket and THE BUCKET ITSELF. Use with caution!'''
 
-    proceed = raw_input(
+    proceed = input(
         "This command will DELETE ALL DATA in S3 bucket '%s' and the BUCKET ITSELF.\nDo you wish to continue? [Y/N] " \
         % (name))
 
@@ -354,7 +354,7 @@ def deletes3bucket(name):
         print("Aborting deletion.")
         return
 
-    print("Attempting to DELETE ALL OBJECTS in '%s' S3 bucket." % name)
+    print(("Attempting to DELETE ALL OBJECTS in '%s' S3 bucket." % name))
 
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(name)

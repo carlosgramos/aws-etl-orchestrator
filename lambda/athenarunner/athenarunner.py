@@ -34,7 +34,7 @@ def load_config():
 def is_json(jsonstring):
     try:
         json_object = json.loads(jsonstring)
-    except ValueError, e:
+    except ValueError as e:
         return False
     return True
 
@@ -59,7 +59,7 @@ def start_athena_queries(config):
             )
 
         except Exception as e:
-            logger.critical(e.message)
+            logger.critical(e)
             logger.critical(
                 'Unrecoverable error invoking get_activity_task for {}.'.format(sfn_activity_arn))
             raise
@@ -146,7 +146,7 @@ def start_athena_queries(config):
 
         except Exception as e:
             logger.error('Failed to query Athena database "{}" with query string "{}"..'.format(athena_database, athena_query_string))
-            logger.error('Reason: {}'.format(e.message))
+            logger.error('Reason: {}'.format(e))
             logger.info('Sending "Task Failed" signal to Step Functions.')
 
             response = sfn.send_task_failure(
@@ -305,6 +305,6 @@ def handler(event, context):
 
     except Exception as e:
         logger.critical('*** ERROR: Athena runner lambda function failed ***')
-        logger.critical(e.message)
+        logger.critical(e)
         raise
 
